@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USDT Order Desk</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --bg-color: #0f172a; --card-bg: #1e293b; --primary-color: #3b82f6; --accent-color: #10b981; --danger-color: #ef4444; --border-color: #334155; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background-color: var(--bg-color); color: #f8fafc; padding: 16px; font-size: 14px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .card { background-color: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color); }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h2 { color: var(--primary-color); font-size: 20px; margin-bottom: 4px; }
+    .rate-badge { display: inline-block; background: rgba(59, 130, 246, 0.15); color: var(--primary-color); padding: 6px 12px; border-radius: 20px; font-weight: bold; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; color: #94a3b8; }
+    select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: #0f172a; color: #fff; font-size: 14px; outline: none; }
+    .warning-box { background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger-color); padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 12px; color: #fca5a5; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .summary-row.total { font-weight: bold; font-size: 16px; color: var(--accent-color); border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background-color: var(--primary-color); color: white; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 8px; }
+    .btn.secondary { background-color: transparent; border: 1px solid var(--border-color); color: #94a3b8; }
+    .qr-box { text-align: center; padding: 16px; background: white; border-radius: 12px; margin-bottom: 16px; }
+    .qr-box img { max-width: 220px; width: 100%; }
+    .upi-id-text { text-align: center; font-size: 13px; color: #94a3b8; margin-bottom: 16px; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>⚡ USDT ORDER DESK</h2>
+    <div class="rate-badge" id="rateBadge">1 USDT = ₹96.84</div>
+  </div>
+
+  <!-- SCREEN 1: Network + Wallet -->
+  <div class="screen active" id="screen1">
+    <div class="warning-box">⚠️ <b>IMPORTANT:</b> Galat network ya wallet address se paisa hamesha ke liye chala jayega.</div>
+    <div class="card">
+      <div class="form-group">
+        <label for="network">1. Network Chuno</label>
+        <select id="network" required>
+          <option value="TRC-20">TRC-20 (Tron)</option>
+          <option value="BEP-20">BEP-20 (BNB Smart Chain)</option>
+          <option value="ERC-20">ERC-20 (Ethereum)</option>
+          <option value="Polygon">Polygon (MATIC)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="wallet">2. Apna Wallet Address Daalo</label>
+        <input type="text" id="wallet" placeholder="Wallet address paste karo" required>
+      </div>
+    </div>
+    <button class="btn" onclick="goToScreen2()">Aage Badho →</button>
+  </div>
+
+  <!-- SCREEN 2: Amount + Confirm -->
+  <div class="screen" id="screen2">
+    <div class="card">
+      <div class="form-group">
+        <label for="usdtAmount">USDT Amount (Min: 5)</label>
+        <input type="number" id="usdtAmount" min="5" step="0.1" value="10" required>
+      </div>
+      <div class="summary-row"><span>Network:</span><span id="confirmNetwork">-</span></div>
+      <div class="summary-row"><span>Wallet:</span><span id="confirmWallet" style="font-size:11px;word-break:break-all;">-</span></div>
+      <div class="summary-row"><span>Rate:</span><span>₹96.84</span></div>
+      <div class="summary-row total"><span>Total Payable:</span><span id="inrTotal">₹968.40</span></div>
+    </div>
+    <button class="btn" onclick="goToScreen3()">Order Confirm Karo →</button>
+    <button class="btn secondary" onclick="goToScreen1()">← Wapas Jao</button>
+  </div>
+
+  <!-- SCREEN 3: QR + UTR -->
+  <div class="screen" id="screen3">
+    <div class="card">
+      <p style="margin-bottom:12px; color:#94a3b8;">Neeche diye QR code se <span id="payAmountText" style="color:#10b981;font-weight:bold;">₹0</span> pay karo:</p>
+      <div class="qr-box">
+        <img id="qrImage" src="" alt="Payment QR">
+      </div>
+      <div class="upi-id-text">UPI ID: BHARATPE2C0U0J6M3J48815@unitype</div>
+      <div class="form-group">
+        <label for="utr">Payment ke baad 12-digit UTR/Ref Number daalo</label>
+        <input type="text" id="utr" maxlength="12" placeholder="123456789012" required>
+      </div>
+    </div>
+    <button class="btn" onclick="submitOrder()">✅ Order Submit Karo</button>
+    <button class="btn secondary" onclick="goToScreen2()">← Wapas Jao</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const rate = 96.84;
+    const upiId = "BHARATPE2C0U0J6M3J48815@unitype";
+    const payeeName = "USDT Order Desk";
+
+    let orderData = { network: "", wallet: "", usdtAmount: 0, inrAmount: 0 };
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function goToScreen1() { showScreen('screen1'); }
+
+    function goToScreen2() {
+      const wallet = document.getElementById('wallet').value.trim();
+      if (!wallet) { tg.showAlert("Wallet address daalo!"); return; }
+      orderData.network = document.getElementById('network').value;
+      orderData.wallet = wallet;
+      document.getElementById('confirmNetwork').textContent = orderData.network;
+      document.getElementById('confirmWallet').textContent = orderData.wallet;
+      updateTotal();
+      showScreen('screen2');
+    }
+
+    function updateTotal() {
+      const amount = parseFloat(document.getElementById('usdtAmount').value) || 0;
+      const total = (amount * rate).toFixed(2);
+      document.getElementById('inrTotal').textContent = `₹${total}`;
+    }
+    document.getElementById('usdtAmount').addEventListener('input', updateTotal);
+
+    function goToScreen3() {
+      const usdt = parseFloat(document.getElementById('usdtAmount').value);
+      if (!usdt || usdt < 5) { tg.showAlert("Minimum order 5 USDT hai!"); return; }
+      orderData.usdtAmount = usdt;
+      orderData.inrAmount = (usdt * rate).toFixed(2);
+
+      document.getElementById('payAmountText').textContent = `₹${orderData.inrAmount}`;
+
+      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${orderData.inrAmount}&cu=INR`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
+      document.getElementById('qrImage').src = qrUrl;
+
+      showScreen('screen3');
+    }
+
+    function submitOrder() {
+      const utr = document.getElementById('utr').value.trim();
+      if (!/^\d{12}$/.test(utr)) { tg.showAlert("Sahi 12-digit UTR number daalo!"); return; }
+      orderData.utr = utr;
+      tg.sendData(JSON.stringify(orderData));
+    }
+  </script>
+</body>
+</html>
